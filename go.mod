@@ -1,4 +1,4 @@
-module github.com/acend/docsy-plus
+module github.com/DonGiovanni83/docsy-plus
 
 go 1.20
 

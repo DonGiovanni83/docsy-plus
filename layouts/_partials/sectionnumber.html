@@ -5,8 +5,12 @@
 {{ $navRoot := cond (and (ne .Params.toc_root true) (eq .Site.Home.Type "docs")) .Site.Home .FirstSection -}}
 {{ $data := $navRoot.Scratch }}
 {{/* Check if the current page was already evaluated */}}
-{{ if not ($data.Get .File.Path) }}
-    {{ $data = partialCached "sectionnumber-nested" (dict "page" . "section" $navRoot "data" $data) $navRoot.File.Path }}
+{{ $filePath := "" }}
+{{ with .File }}{{ $filePath = .Path }}{{ end }}
+{{ $navRootFilePath := "" }}
+{{ with $navRoot.File }}{{ $navRootFilePath = .Path }}{{ end }}
+{{ if and $filePath (not ($data.Get $filePath)) }}
+    {{ $data = partialCached "sectionnumber-nested" (dict "page" . "section" $navRoot "data" $data) $navRootFilePath }}
 {{ end }}
 {{ return $data }}
 
@@ -15,7 +19,9 @@
   {{ $p := .page }}
   {{ $d := .data }}
   {{ $sectionNr := .sectionNr | default "" }}
-  {{ .data.Set $s.File.Path $sectionNr }}
+  {{ $sFilePath := "" }}
+  {{ with $s.File }}{{ $sFilePath = .Path }}{{ end }}
+  {{ if $sFilePath }}{{ .data.Set $sFilePath $sectionNr }}{{ end }}
   {{ $pages := (union $s.Pages $s.Sections).ByWeight -}}
   {{ $withChild := gt (len $pages) 0 -}}
   {{- if $withChild }}
@@ -26,7 +32,11 @@
         {{ if (not (and (eq $s $p.Site.Home) (eq .Params.toc_root true))) -}}
           {{ $count = add $count 1 }}
           {{ $newSectionNr := printf "%s%d." $sectionNr $count }}
-          {{ $d = partialCached "sectionnumber-nested" (dict "page" $p "section" . "sectionNr" $newSectionNr "data" $d) .File.Path }}
+          {{ $pageFilePath := "" }}
+          {{ with .File }}{{ $pageFilePath = .Path }}{{ end }}
+          {{ if $pageFilePath }}
+            {{ $d = partialCached "sectionnumber-nested" (dict "page" $p "section" . "sectionNr" $newSectionNr "data" $d) $pageFilePath }}
+          {{ end }}
         {{- end }}
       {{- end }}
     {{- end }}
